@@ -1,107 +1,94 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Apple, Leaf, Utensils, CheckCircle, ArrowLeft, Star, Sparkles } from 'lucide-react';
+import { ArrowLeft, Star, Sparkles, ChevronRight } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useStore } from '../store';
-
-const CHALLENGE_DATA = {
-  items: [
-    { id: 'a1', icon: Apple, category: 'fruit', color: 'text-red-500', name: '苹果' },
-    { id: 'a2', icon: Leaf, category: 'veggie', color: 'text-green-500', name: '青菜' },
-    { id: 'a3', icon: Apple, category: 'fruit', color: 'text-orange-400', name: '橙子' },
-    { id: 'a4', icon: Leaf, category: 'veggie', color: 'text-emerald-600', name: '西兰花' },
-  ],
-  targets: [
-    { type: 'fruit', label: '水果篮', icon: '🧺' },
-    { type: 'veggie', label: '蔬菜筐', icon: '📦' }
-  ]
-};
+import { levels } from '../data/levels';
+import { speak } from '../utils/voice';
+import { playSfx } from '../utils/sfx';
 
 export function WisdomIsland({ onBack }) {
-  const [items, setItems] = useState(CHALLENGE_DATA.items);
-  const [lastDrop, setLastDrop] = useState(null); // 用于标记哪个篮子动了
+  const [levelIndex, setLevelLevelIndex] = useState(0);
+  const currentLevel = levels[levelIndex];
+  const [items, setItems] = useState(currentLevel.items);
+  const [lastDrop, setLastDrop] = useState(null);
+  const [showLevelComplete, setShowLevelComplete] = useState(false);
   const { completeActivity } = useStore();
+
+  // 关卡开始语音
+  useEffect(() => {
+    setItems(currentLevel.items);
+    setShowLevelComplete(false);
+    speak(currentLevel.instruction);
+  }, [levelIndex]);
 
   const handleDragEnd = (event, info, item) => {
     const dropY = info.point.y;
-    // 简单的碰撞区域模拟
-    const isFruitArea = dropY < 400;
-    const isVeggieArea = dropY >= 400;
+    // 动态计算目标位置逻辑 (简单分层判定)
+    const targetCount = currentLevel.targets.length;
+    const dropIndex = Math.min(Math.floor(dropY / (600 / targetCount)), targetCount - 1);
+    const target = currentLevel.targets[dropIndex];
 
-    let success = false;
-    if (item.category === 'fruit' && isFruitArea) {
-      success = true;
-      setLastDrop('fruit');
-    } else if (item.category === 'veggie' && isVeggieArea) {
-      success = true;
-      setLastDrop('veggie');
-    }
-
-    if (success) {
+    if (item.category === target.type) {
+      playSfx('ding');
+      setLastDrop(target.type);
       setItems(prev => prev.filter(i => i.id !== item.id));
       setTimeout(() => setLastDrop(null), 300);
+    } else {
+      playSfx('pop');
     }
   };
 
-  // 监听游戏结束
+  // 监听单关结束
   useEffect(() => {
     if (items.length === 0) {
-      confetti({
-        particleCount: 150,
-        spread: 70,
-        origin: { y: 0.6 },
-        colors: ['#94C973', '#FDFCF0', '#A1C3D1']
-      });
-      // 这里的 ID 1 对应 activities.js 中的第一个任务
-      completeActivity(1, 30);
+      playSfx('win');
+      confetti({ particleCount: 80, spread: 50, origin: { y: 0.8 } });
+      setShowLevelComplete(true);
       
-      // 3秒后自动返回首页
-      const timer = setTimeout(onBack, 3000);
-      return () => clearTimeout(timer);
+      if (levelIndex === levels.length - 1) {
+        completeActivity(1, 50); // 全部完成奖励
+        speak("恭喜你！完成了所有探险任务！");
+      } else {
+        speak("太棒了！我们去下一关吧。");
+      }
     }
   }, [items]);
 
   return (
     <div className="fixed inset-0 bg-[#FDFCF0] z-50 p-6 flex flex-col font-sans">
-      <header className="flex items-center justify-between mb-10">
-        <motion.button 
-          whileTap={{ scale: 0.8 }}
-          onClick={onBack} 
-          className="p-3 bg-white rounded-2xl shadow-sm"
-        >
+      <header className="flex items-center justify-between mb-6">
+        <motion.button whileTap={{ scale: 0.8 }} onClick={onBack} className="p-3 bg-white rounded-2xl shadow-sm">
           <ArrowLeft size={24} className="text-slate-400" />
         </motion.button>
-        <div className="bg-white px-6 py-2 rounded-2xl shadow-sm border border-slate-100">
-          <h2 className="text-lg font-black text-slate-800">分类挑战</h2>
+        <div className="flex flex-col items-center">
+          <h2 className="text-lg font-black text-slate-800">{currentLevel.title}</h2>
+          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">关卡 {levelIndex + 1} / {levels.length}</span>
         </div>
         <div className="w-12 h-12 bg-brand-sprout/20 rounded-full flex items-center justify-center">
-          <BrainIcon className="text-brand-sprout" />
+          <Star className="text-brand-sprout fill-brand-sprout" size={24} />
         </div>
       </header>
 
-      <div className="flex-1 flex flex-col justify-around">
+      <div className="flex-1 flex flex-col justify-around relative">
         {/* Drop Targets */}
-        <div className="space-y-6">
-          {CHALLENGE_DATA.targets.map(target => (
+        <div className="grid grid-cols-1 gap-4">
+          {currentLevel.targets.map(target => (
             <motion.div 
               key={target.type}
-              animate={lastDrop === target.type ? { scale: [1, 1.1, 1] } : {}}
-              className={`h-40 rounded-[2.5rem] border-4 border-dashed flex flex-col items-center justify-center transition-colors ${
-                target.type === 'fruit' 
-                  ? 'border-orange-200 bg-orange-50/50' 
-                  : 'border-green-200 bg-green-50/50'
-              }`}
+              animate={lastDrop === target.type ? { scale: [1, 1.05, 1], backgroundColor: '#ecfdf5' } : {}}
+              className="h-32 rounded-[2rem] border-4 border-dashed border-slate-200 bg-white/50 flex flex-col items-center justify-center relative"
             >
-              <span className="text-6xl mb-2 drop-shadow-sm">{target.icon}</span>
-              <span className="text-sm font-black text-slate-400 uppercase tracking-widest">{target.label}</span>
+              <span className="text-5xl mb-1">{target.icon}</span>
+              <span className="text-xs font-black text-slate-400 uppercase tracking-widest">{target.label}</span>
             </motion.div>
           ))}
         </div>
 
         {/* Draggable Items */}
-        <div className="flex justify-center gap-8 h-24 items-center">
+        <div className="flex justify-center gap-6 h-32 items-center flex-wrap px-4">
           <AnimatePresence>
-            {items.map(item => {
+            {!showLevelComplete && items.map(item => {
               const Icon = item.icon;
               return (
                 <motion.div
@@ -110,60 +97,59 @@ export function WisdomIsland({ onBack }) {
                   dragSnapToOrigin
                   onDragEnd={(e, i) => handleDragEnd(e, i, item)}
                   whileHover={{ scale: 1.1 }}
-                  whileDrag={{ scale: 1.3, rotate: 10, zIndex: 100 }}
+                  whileDrag={{ scale: 1.2, zIndex: 100 }}
                   exit={{ scale: 0, opacity: 0 }}
-                  className={`w-20 h-24 bg-white rounded-3xl shadow-xl border-2 border-slate-50 flex flex-col items-center justify-center cursor-grab active:cursor-grabbing p-4`}
+                  className="w-20 h-20 bg-white rounded-3xl shadow-xl border border-slate-100 flex items-center justify-center cursor-grab active:cursor-grabbing p-2"
                 >
-                  <Icon className={`${item.color} mb-1`} size={40} />
-                  <span className="text-[10px] font-bold text-slate-400">{item.name}</span>
+                  <Icon className={item.color} size={40} />
                 </motion.div>
               );
             })}
           </AnimatePresence>
-          {items.length === 0 && (
+        </div>
+
+        {/* Level Complete Overlay */}
+        <AnimatePresence>
+          {showLevelComplete && (
             <motion.div 
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              className="text-center"
+              initial={{ opacity: 0, y: 20 }} 
+              animate={{ opacity: 1, y: 0 }}
+              className="absolute inset-0 flex flex-col items-center justify-center z-50 bg-[#FDFCF0]/90 backdrop-blur-sm rounded-[3rem]"
             >
-              <div className="bg-white p-6 rounded-full shadow-2xl mb-4 inline-block">
-                <Star className="text-yellow-400 fill-yellow-400" size={48} />
+              <div className="bg-white p-8 rounded-full shadow-2xl mb-6">
+                <Sparkles className="text-yellow-400" size={64} />
               </div>
-              <h3 className="text-2xl font-black text-[#94C973]">太棒了！</h3>
+              <h3 className="text-3xl font-black text-slate-800 mb-8 text-center">
+                {levelIndex === levels.length - 1 ? "全关通关！" : "关卡完成！"}
+              </h3>
+              
+              {levelIndex < levels.length - 1 ? (
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setLevelLevelIndex(i => i + 1)}
+                  className="bg-[#94C973] text-white px-10 py-5 rounded-[2rem] text-xl font-black flex items-center gap-3 shadow-xl"
+                >
+                  进入下一关 <ChevronRight size={24} strokeWidth={3} />
+                </motion.button>
+              ) : (
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={onBack}
+                  className="bg-brand-sky text-white px-10 py-5 rounded-[2rem] text-xl font-black shadow-xl"
+                >
+                  返回探险基地
+                </motion.button>
+              )}
             </motion.div>
           )}
-        </div>
+        </AnimatePresence>
       </div>
 
-      <div className="bg-white/50 backdrop-blur-sm p-4 rounded-2xl border border-white mt-4 flex items-center gap-3">
-        <Sparkles className="text-amber-400" size={20} />
-        <p className="text-sm font-bold text-slate-500">
-          {items.length > 0 ? "把好吃的拖进正确的篮子吧！" : "挑战完成，正在保存进度..."}
-        </p>
+      <div className="text-center bg-white/40 p-4 rounded-3xl mt-4 border border-white">
+        <p className="text-sm font-black text-slate-500 tracking-tight">{currentLevel.instruction}</p>
       </div>
     </div>
-  );
-}
-
-function BrainIcon(props) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .52 8.105 3 3 0 1 0 5.127-2.927Z" />
-      <path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.52 8.105 3 3 0 1 1-5.127-2.927Z" />
-      <path d="M9 14h6" />
-      <path d="M12 11v3" />
-      <path d="M12 17v3" />
-    </svg>
   );
 }
