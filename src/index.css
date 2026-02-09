@@ -1,0 +1,11 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-warm: #FDFCF0;
+  --color-brand-sprout: #94C973;
+  --color-brand-sky: #A1C3D1;
+}
+
+body {
+  @apply bg-brand-warm text-slate-800;
+}
