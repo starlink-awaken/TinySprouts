@@ -1,14 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Settings, LogOut, ShieldCheck, Mail, ChevronRight, BarChart3, Cloud, Trash2, ArrowLeft } from 'lucide-react';
+import { Settings, LogOut, ShieldCheck, Mail, ChevronRight, BarChart3, Cloud, Trash2, ArrowLeft, RefreshCw, CheckCircle2 } from 'lucide-react';
 import { useStore } from '../store';
 import { ParentalGate } from '../components/ParentalGate';
 import { AbilityRadar } from '../components/AbilityRadar';
+import { MagicLinkAuth } from '../components/MagicLinkAuth';
+import { useSync } from '../hooks/useSync';
 
 export function ProfileView() {
   const { user, level, stars, maxStreak, resetProgress, activityLogs } = useStore();
+  const { isLoggedIn, userEmail, syncStatus, syncNow, logout } = useSync();
   const [isGateOpen, setIsGateOpen] = useState(false);
   const [showAdmin, setShowAdmin] = useState(false);
+  const [showAuth, setShowAuth] = useState(false);
 
   const handleGateConfirm = () => {
     setIsGateOpen(false);
@@ -24,6 +28,17 @@ export function ProfileView() {
       />
 
       <AnimatePresence>
+        {showAuth && (
+          <motion.div 
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[200] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-6"
+          >
+            <MagicLinkAuth onCancel={() => setShowAuth(false)} onSuccess={() => setShowAuth(false)} />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence mode="wait">
         {!showAdmin ? (
           <motion.div key="user-view" exit={{ opacity: 0, x: -20 }}>
             <header className="flex flex-col items-center mb-8">
@@ -73,9 +88,44 @@ export function ProfileView() {
             <div className="mt-8 space-y-4">
               <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest px-2">账户与系统</h3>
               <div className="bg-white rounded-[2rem] overflow-hidden shadow-sm border border-slate-100 p-2">
-                <AdminAction icon={<Cloud />} label="云端同步" desc="连接邮箱，保存成长进度" color="text-brand-sky" />
-                <AdminAction icon={<BarChart3 />} label="详细周报" desc="查看各关卡完成时长" color="text-brand-pink" />
+                
+                {/* Sync Section */}
+                {isLoggedIn ? (
+                  <div className="p-4 bg-brand-sky/5 rounded-2xl mb-2">
+                    <div className="flex justify-between items-center mb-2">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+                        <span className="text-xs font-bold text-slate-500">{userEmail}</span>
+                      </div>
+                      <button onClick={logout} className="text-[10px] font-bold text-red-400">退出</button>
+                    </div>
+                    <button 
+                      onClick={syncNow}
+                      disabled={syncStatus === 'syncing'}
+                      className="w-full bg-brand-sky text-white py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-brand-sky/20"
+                    >
+                      {syncStatus === 'syncing' && <RefreshCw size={16} className="animate-spin" />}
+                      {syncStatus === 'success' && <CheckCircle2 size={16} />}
+                      {syncStatus === 'idle' ? '立即同步数据' : syncStatus === 'syncing' ? '同步中...' : '同步完成'}
+                    </button>
+                  </div>
+                ) : (
+                  <button 
+                    onClick={() => setShowAuth(true)}
+                    className="w-full p-4 flex items-center gap-4 hover:bg-slate-50 rounded-2xl transition-colors text-left"
+                  >
+                    <div className="p-2 rounded-xl bg-slate-50 text-brand-sky">
+                      <Cloud size={20} />
+                    </div>
+                    <div>
+                      <p className="font-bold text-sm text-slate-700">开启云同步</p>
+                      <p className="text-[10px] text-slate-400 font-medium">登录以备份数据</p>
+                    </div>
+                  </button>
+                )}
+
                 <div className="h-px bg-slate-100 my-2 mx-4" />
+                
                 <button 
                   onClick={() => {
                     if(confirm('确定要清除所有数据重新开始吗？')) {
@@ -108,19 +158,5 @@ function StatItem({ label, value, color }) {
         {label}
       </span>
     </div>
-  );
-}
-
-function AdminAction({ icon, label, desc, color }) {
-  return (
-    <button className="w-full p-4 flex items-center gap-4 hover:bg-slate-50 rounded-2xl transition-colors text-left group">
-      <div className={`p-2 rounded-xl bg-slate-50 ${color} group-hover:scale-110 transition-transform`}>
-        {React.cloneElement(icon, { size: 20 })}
-      </div>
-      <div>
-        <p className="font-bold text-sm text-slate-700">{label}</p>
-        <p className="text-[10px] text-slate-400 font-medium">{desc}</p>
-      </div>
-    </button>
   );
 }
