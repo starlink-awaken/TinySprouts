@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Sprout, Heart, PlusCircle, BookOpen, Settings, CheckCircle2, Sparkles } from 'lucide-react';
+import { Sprout, Heart, PlusCircle, BookOpen, Settings, Sparkles, Brain } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useStore } from './store';
 
@@ -7,33 +7,58 @@ import { useStore } from './store';
 import { HomeView } from './views/HomeView';
 import { LibraryView } from './views/LibraryView';
 import { ProfileView } from './views/ProfileView';
+import { WisdomIsland } from './views/WisdomIsland';
+
+import confetti from 'canvas-confetti';
+
+// ... (previous imports)
 
 function App() {
-  const { level, addExp, activeTab, setActiveTab } = useStore();
-  const [showToast, setShowToast] = useState(false);
-  const [lastAction, setLastAction] = useState('');
-
-  // 监听等级变化
+  // ...
   useEffect(() => {
-    if (level > 1) { // 只要升级就提示，不仅仅是 level > 2
+    if (level > 1) {
       setLastAction(`恭喜升到 LV.${level}! 🎉`);
       setShowToast(true);
+      
+      // 升级烟花
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 },
+        zIndex: 200
+      });
+
       setTimeout(() => setShowToast(false), 3000);
     }
   }, [level]);
 
-  // 处理开始互动的通用逻辑
   const handleStartActivity = (activity) => {
-    const points = activity.exp || 15;
-    setLastAction(`完成 "${activity.title}" +${points}EXP`);
-    addExp(points);
-    setShowToast(true);
-    setTimeout(() => setShowToast(false), 2000);
+    if (activity.type === 'game') {
+      setShowGame(true);
+    } else {
+      const points = activity.exp || 15;
+      setLastAction(`完成 "${activity.title}" +${points}EXP`);
+      completeActivity(activity.id, points);
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 2000);
+    }
   };
 
   return (
     <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto font-sans relative overflow-hidden bg-[#FDFCF0]">
-      {/* Toast Notification */}
+      <AnimatePresence>
+        {showGame && (
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 1.1 }}
+            className="fixed inset-0 z-[100]"
+          >
+            <WisdomIsland onBack={() => setShowGame(false)} />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <AnimatePresence>
         {showToast && (
           <motion.div 
@@ -49,18 +74,23 @@ function App() {
         )}
       </AnimatePresence>
 
-      {/* Header */}
       <header className="flex justify-between items-center mb-8 sticky top-0 z-40 py-2 bg-[#FDFCF0]/80 backdrop-blur-sm">
         <div>
           <h1 className="text-2xl font-black text-[#94C973] tracking-tight flex items-center gap-2">
             TinySprouts <Sprout fill="#94C973" />
           </h1>
-          <p className="text-slate-400 text-xs mt-1 font-medium italic">Love grows here.</p>
+          <p className="text-slate-400 text-xs mt-1 font-medium italic">Learning is an adventure.</p>
         </div>
+        <motion.button 
+          whileTap={{ scale: 0.9 }}
+          onClick={() => setShowGame(true)}
+          className="bg-brand-sprout/10 p-2 rounded-xl text-brand-sprout"
+        >
+          <Brain size={24} />
+        </motion.button>
       </header>
 
-      {/* Main Content Area */}
-      <main className="flex-1">
+      <main className="flex-1 overflow-y-auto">
         <AnimatePresence mode="wait">
           <motion.div
             key={activeTab}
@@ -72,7 +102,6 @@ function App() {
             {activeTab === 'home' && <HomeView onStartActivity={handleStartActivity} />}
             {activeTab === 'lib' && <LibraryView onStartActivity={handleStartActivity} />}
             {activeTab === 'profile' && <ProfileView />}
-            {/* Fav Tab Placeholder */}
             {activeTab === 'fav' && (
                <div className="flex flex-col items-center justify-center h-64 text-slate-400">
                   <Heart size={48} className="mb-4 opacity-20" />
@@ -83,7 +112,6 @@ function App() {
         </AnimatePresence>
       </main>
 
-      {/* Fixed Bottom Nav */}
       <nav className="fixed bottom-8 left-8 right-8 max-w-md mx-auto bg-white/90 backdrop-blur-xl rounded-[1.5rem] p-3 shadow-2xl border border-white/50 flex justify-around items-center z-40">
         <NavButton active={activeTab === 'home'} onClick={() => setActiveTab('home')} icon={<PlusCircle size={26} />} />
         <NavButton active={activeTab === 'lib'} onClick={() => setActiveTab('lib')} icon={<BookOpen size={26} />} />
