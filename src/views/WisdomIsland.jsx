@@ -7,6 +7,7 @@ import { levels } from '../data/levels';
 import { speak } from '../utils/voice';
 import { playSfx } from '../utils/sfx';
 import { GuideHand } from '../components/GuideHand';
+import { ComboFire } from '../components/ComboFire';
 
 export function WisdomIsland({ onBack }) {
   const [levelIndex, setLevelIndex] = useState(0);
@@ -15,9 +16,8 @@ export function WisdomIsland({ onBack }) {
   const [lastDrop, setLastDrop] = useState(null);
   const [showLevelComplete, setShowLevelComplete] = useState(false);
   const [showGuide, setShowGuide] = useState(false);
-  const { completeActivity } = useStore();
+  const { completeActivity, streak, updateStreak } = useStore();
   
-  // 引用所有目标容器
   const targetRefs = useRef({});
 
   useEffect(() => {
@@ -30,21 +30,13 @@ export function WisdomIsland({ onBack }) {
 
   const handleDragEnd = (event, info, item) => {
     setShowGuide(false);
-    
-    // 获取松开手时的坐标
     const { x, y } = info.point;
     
-    // 遍历所有目标容器，检测碰撞
     let matchedTarget = null;
     for (const [type, ref] of Object.entries(targetRefs.current)) {
       if (!ref) continue;
       const rect = ref.getBoundingClientRect();
-      if (
-        x >= rect.left && 
-        x <= rect.right && 
-        y >= rect.top && 
-        y <= rect.bottom
-      ) {
+      if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
         matchedTarget = type;
         break;
       }
@@ -52,6 +44,7 @@ export function WisdomIsland({ onBack }) {
 
     if (matchedTarget === item.category) {
       playSfx('ding');
+      updateStreak(true); // 连击+1
       setLastDrop(matchedTarget);
       setItems(prev => prev.filter(i => i.id !== item.id));
       const praise = ["太棒了！", "真聪明！", "找对了！", "真厉害！"];
@@ -59,9 +52,8 @@ export function WisdomIsland({ onBack }) {
       setTimeout(() => setLastDrop(null), 300);
     } else {
       playSfx('pop');
-      if (matchedTarget) {
-        speak("哎呀，这里不是它的家哦");
-      }
+      updateStreak(false); // 连击中断
+      if (matchedTarget) speak("哎呀，这里不是它的家哦");
     }
   };
 
@@ -82,7 +74,8 @@ export function WisdomIsland({ onBack }) {
   }, [items]);
 
   return (
-    <div className="fixed inset-0 bg-[#FDFCF0] z-50 p-6 flex flex-col font-sans select-none">
+    <div className="fixed inset-0 bg-[#FDFCF0] z-50 p-6 flex flex-col font-sans select-none overflow-hidden">
+      <ComboFire streak={streak} />
       {showGuide && !showLevelComplete && <GuideHand />}
       
       <header className="flex items-center justify-between mb-6">
@@ -101,7 +94,6 @@ export function WisdomIsland({ onBack }) {
       </header>
 
       <div className="flex-1 flex flex-col justify-around relative">
-        {/* Drop Targets with Refs */}
         <div className="grid grid-cols-1 gap-4">
           {currentLevel.targets.map(target => (
             <motion.div 
@@ -116,7 +108,6 @@ export function WisdomIsland({ onBack }) {
           ))}
         </div>
 
-        {/* Draggable Items */}
         <div className="flex justify-center gap-6 h-32 items-center flex-wrap px-4">
           <AnimatePresence>
             {!showLevelComplete && items.map(item => {
@@ -139,7 +130,6 @@ export function WisdomIsland({ onBack }) {
           </AnimatePresence>
         </div>
 
-        {/* Level Complete Overlay */}
         <AnimatePresence>
           {showLevelComplete && (
             <motion.div 

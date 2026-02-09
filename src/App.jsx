@@ -13,6 +13,7 @@ import { WisdomIsland } from './views/WisdomIsland';
 import { NumberForest } from './views/NumberForest';
 import { ArtCanvas } from './views/ArtCanvas';
 import { VoiceLab } from './views/VoiceLab';
+import { EmotionMatch } from './views/EmotionMatch';
 import { MagicCursor } from './components/MagicCursor';
 
 function App() {
@@ -32,7 +33,9 @@ function App() {
   }, [level]);
 
   const handleStartActivity = (activity) => {
-    if (activity.category === '数理逻辑') {
+    if (activity.id === 4 || activity.title === '情绪连连看') {
+      navigate('/game/emotion');
+    } else if (activity.category === '数理逻辑') {
       navigate('/game/forest');
     } else if (activity.category === '创意艺术') {
       navigate('/game/art');
@@ -55,7 +58,6 @@ function App() {
     <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto font-sans relative overflow-hidden bg-[#FDFCF0]">
       <MagicCursor />
       
-      {/* Toast Notification */}
       <AnimatePresence>
         {showToast && (
           <motion.div 
@@ -105,6 +107,7 @@ function App() {
             <Route path="/game/forest" element={<NumberForest onBack={() => navigate('/')} />} />
             <Route path="/game/art" element={<ArtCanvas onBack={() => navigate('/')} />} />
             <Route path="/game/voice" element={<VoiceLab onBack={() => navigate('/')} />} />
+            <Route path="/game/emotion" element={<EmotionMatch onBack={() => navigate('/')} />} />
             
             <Route path="/fav" element={
                <div className="flex flex-col items-center justify-center h-64 text-slate-400">
