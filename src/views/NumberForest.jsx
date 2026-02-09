@@ -45,7 +45,7 @@ export function NumberForest({ onBack }) {
           playSfx('win');
           speak("太棒了！你数对了！");
           confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
-          completeActivity(2, 20); // 数字森林ID
+          completeActivity(2, 20, '数理逻辑');
         }, 500);
       }
       return next;

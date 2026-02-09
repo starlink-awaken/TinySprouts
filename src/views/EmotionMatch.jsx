@@ -40,7 +40,7 @@ export function EmotionMatch({ onBack }) {
       if (score >= 4) {
         setTimeout(() => {
           playSfx('win');
-          completeActivity(4, 30);
+          completeActivity(4, 30, '社会情感');
           speak("你真是情绪识别小能手！");
         }, 500);
       } else {

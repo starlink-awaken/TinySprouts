@@ -43,7 +43,7 @@ export function ArtCanvas({ onBack }) {
   const stopDrawing = () => {
     if (isDrawing) {
       setIsDrawing(false);
-      completeActivity(3, 5); // 每次画画都给一点点经验
+      completeActivity(3, 5, '创意艺术'); // 每次画画都给一点点经验
     }
   };
 

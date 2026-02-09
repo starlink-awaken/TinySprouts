@@ -65,7 +65,7 @@ export function WisdomIsland({ onBack }) {
       setShowLevelComplete(true);
       
       if (levelIndex === levels.length - 1) {
-        completeActivity(1, 50);
+        completeActivity(1, 50, '数理逻辑');
         speak("恭喜你！完成了所有探险任务！");
       } else {
         speak("太棒了！我们去下一关吧。");
