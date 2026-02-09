@@ -10,6 +10,10 @@ import { HomeView } from './views/HomeView';
 import { LibraryView } from './views/LibraryView';
 import { ProfileView } from './views/ProfileView';
 import { WisdomIsland } from './views/WisdomIsland';
+import { NumberForest } from './views/NumberForest';
+import { ArtCanvas } from './views/ArtCanvas';
+import { VoiceLab } from './views/VoiceLab';
+import { MagicCursor } from './components/MagicCursor';
 
 function App() {
   const { level, completeActivity } = useStore();
@@ -28,8 +32,14 @@ function App() {
   }, [level]);
 
   const handleStartActivity = (activity) => {
-    if (activity.type === 'game') {
-      navigate('/game');
+    if (activity.category === '数理逻辑') {
+      navigate('/game/forest');
+    } else if (activity.category === '创意艺术') {
+      navigate('/game/art');
+    } else if (activity.category === '社会情感' || activity.type === 'social') {
+      navigate('/game/voice');
+    } else if (activity.type === 'game') {
+      navigate('/game/wisdom');
     } else {
       const points = activity.exp || 15;
       setLastAction(`完成 "${activity.title}" +${points}EXP`);
@@ -39,8 +49,12 @@ function App() {
     }
   };
 
+  const isGameRoute = location.pathname.startsWith('/game');
+
   return (
     <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto font-sans relative overflow-hidden bg-[#FDFCF0]">
+      <MagicCursor />
+      
       {/* Toast Notification */}
       <AnimatePresence>
         {showToast && (
@@ -57,7 +71,7 @@ function App() {
         )}
       </AnimatePresence>
 
-      <header className="flex justify-between items-center mb-8 sticky top-0 z-40 py-2 bg-[#FDFCF0]/80 backdrop-blur-sm">
+      <header className={`flex justify-between items-center mb-8 sticky top-0 z-40 py-2 bg-[#FDFCF0]/80 backdrop-blur-sm ${isGameRoute ? 'hidden' : ''}`}>
         <div>
           <h1 className="text-2xl font-black text-[#94C973] tracking-tight flex items-center gap-2">
             TinySprouts <Sprout fill="#94C973" />
@@ -66,7 +80,7 @@ function App() {
         </div>
         <motion.button 
           whileTap={{ scale: 0.9 }}
-          onClick={() => navigate('/game')}
+          onClick={() => navigate('/game/wisdom')}
           className="bg-brand-sprout/10 p-2 rounded-xl text-brand-sprout"
         >
           <Brain size={24} />
@@ -76,10 +90,22 @@ function App() {
       <main className="flex-1 overflow-y-auto">
         <AnimatePresence mode="wait">
           <Routes location={location} key={location.pathname}>
-            <Route path="/" element={<HomeView onStartActivity={handleStartActivity} />} />
-            <Route path="/lib" element={<LibraryView onStartActivity={handleStartActivity} />} />
-            <Route path="/profile" element={<ProfileView />} />
-            <Route path="/game" element={<WisdomIsland onBack={() => navigate('/')} />} />
+            <Route path="/" element={
+              <PageWrapper><HomeView onStartActivity={handleStartActivity} /></PageWrapper>
+            } />
+            <Route path="/lib" element={
+              <PageWrapper><LibraryView onStartActivity={handleStartActivity} /></PageWrapper>
+            } />
+            <Route path="/profile" element={
+              <PageWrapper><ProfileView /></PageWrapper>
+            } />
+            
+            {/* Game Routes */}
+            <Route path="/game/wisdom" element={<WisdomIsland onBack={() => navigate('/')} />} />
+            <Route path="/game/forest" element={<NumberForest onBack={() => navigate('/')} />} />
+            <Route path="/game/art" element={<ArtCanvas onBack={() => navigate('/')} />} />
+            <Route path="/game/voice" element={<VoiceLab onBack={() => navigate('/')} />} />
+            
             <Route path="/fav" element={
                <div className="flex flex-col items-center justify-center h-64 text-slate-400">
                   <Heart size={48} className="mb-4 opacity-20" />
@@ -90,8 +116,7 @@ function App() {
         </AnimatePresence>
       </main>
 
-      {/* Navigation Footer */}
-      {!location.pathname.includes('/game') && (
+      {!isGameRoute && (
         <nav className="fixed bottom-8 left-8 right-8 max-w-md mx-auto bg-white/90 backdrop-blur-xl rounded-[1.5rem] p-3 shadow-2xl border border-white/50 flex justify-around items-center z-40">
           <NavBtn to="/" icon={<PlusCircle size={26} />} />
           <NavBtn to="/lib" icon={<BookOpen size={26} />} />
@@ -100,6 +125,19 @@ function App() {
         </nav>
       )}
     </div>
+  );
+}
+
+function PageWrapper({ children }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 1.05 }}
+      transition={{ duration: 0.3 }}
+    >
+      {children}
+    </motion.div>
   );
 }
 
