@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Settings, LogOut, ShieldCheck, Mail, ChevronRight, BarChart3, Cloud, Trash2, ArrowLeft, RefreshCw, CheckCircle2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Settings, LogOut, ShieldCheck, Mail, ChevronRight, BarChart3, Cloud, Trash2, ArrowLeft, RefreshCw, CheckCircle2, FileText } from 'lucide-react';
 import { useStore } from '../store';
 import { ParentalGate } from '../components/ParentalGate';
 import { AbilityRadar } from '../components/AbilityRadar';
@@ -13,6 +14,7 @@ export function ProfileView() {
   const [isGateOpen, setIsGateOpen] = useState(false);
   const [showAdmin, setShowAdmin] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
+  const navigate = useNavigate();
 
   const handleGateConfirm = () => {
     setIsGateOpen(false);
@@ -86,10 +88,19 @@ export function ProfileView() {
             <AbilityRadar logs={activityLogs} />
             
             <div className="mt-8 space-y-4">
-              <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest px-2">账户与系统</h3>
+              <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest px-2">分析与管理</h3>
               <div className="bg-white rounded-[2rem] overflow-hidden shadow-sm border border-slate-100 p-2">
                 
-                {/* Sync Section */}
+                <AdminAction 
+                  icon={<FileText />} 
+                  label="详细周报" 
+                  desc="查看本周成长足迹与建议" 
+                  color="text-brand-pink" 
+                  onClick={() => navigate('/admin/report')}
+                />
+
+                <div className="h-px bg-slate-100 my-2 mx-4" />
+
                 {isLoggedIn ? (
                   <div className="p-4 bg-brand-sky/5 rounded-2xl mb-2">
                     <div className="flex justify-between items-center mb-2">
@@ -110,18 +121,13 @@ export function ProfileView() {
                     </button>
                   </div>
                 ) : (
-                  <button 
+                  <AdminAction 
+                    icon={<Cloud />} 
+                    label="云端同步" 
+                    desc="连接邮箱，保存成长进度" 
+                    color="text-brand-sky" 
                     onClick={() => setShowAuth(true)}
-                    className="w-full p-4 flex items-center gap-4 hover:bg-slate-50 rounded-2xl transition-colors text-left"
-                  >
-                    <div className="p-2 rounded-xl bg-slate-50 text-brand-sky">
-                      <Cloud size={20} />
-                    </div>
-                    <div>
-                      <p className="font-bold text-sm text-slate-700">开启云同步</p>
-                      <p className="text-[10px] text-slate-400 font-medium">登录以备份数据</p>
-                    </div>
-                  </button>
+                  />
                 )}
 
                 <div className="h-px bg-slate-100 my-2 mx-4" />
@@ -158,5 +164,20 @@ function StatItem({ label, value, color }) {
         {label}
       </span>
     </div>
+  );
+}
+
+function AdminAction({ icon, label, desc, color, onClick }) {
+  return (
+    <button onClick={onClick} className="w-full p-4 flex items-center gap-4 hover:bg-slate-50 rounded-2xl transition-colors text-left group">
+      <div className={`p-2 rounded-xl bg-slate-50 ${color} group-hover:scale-110 transition-transform`}>
+        {React.cloneElement(icon, { size: 20 })}
+      </div>
+      <div className="flex-1">
+        <p className="font-bold text-sm text-slate-700">{label}</p>
+        <p className="text-[10px] text-slate-400 font-medium">{desc}</p>
+      </div>
+      <ChevronRight size={16} className="text-slate-200" />
+    </button>
   );
 }

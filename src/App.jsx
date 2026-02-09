@@ -14,6 +14,7 @@ import { NumberForest } from './views/NumberForest';
 import { ArtCanvas } from './views/ArtCanvas';
 import { VoiceLab } from './views/VoiceLab';
 import { EmotionMatch } from './views/EmotionMatch';
+import { WeeklyReport } from './views/WeeklyReport';
 import { MagicCursor } from './components/MagicCursor';
 
 function App() {
@@ -33,9 +34,6 @@ function App() {
   }, [level]);
 
   const handleStartActivity = (activity) => {
-    console.log("Navigating to activity:", activity.title, "ID:", activity.id);
-    
-    // 使用 ID 进行精确匹配跳转
     switch(activity.id) {
       case 1: navigate('/game/wisdom'); break;
       case 2: navigate('/game/forest'); break;
@@ -52,6 +50,7 @@ function App() {
   };
 
   const isGameRoute = location.pathname.includes('/game');
+  const isAdminRoute = location.pathname.includes('/admin');
 
   return (
     <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto font-sans relative overflow-hidden bg-[#FDFCF0]">
@@ -70,7 +69,7 @@ function App() {
         )}
       </AnimatePresence>
 
-      <header className={`flex justify-between items-center mb-8 sticky top-0 z-40 py-2 bg-[#FDFCF0]/80 backdrop-blur-sm ${isGameRoute ? 'hidden' : ''}`}>
+      <header className={`flex justify-between items-center mb-8 sticky top-0 z-40 py-2 bg-[#FDFCF0]/80 backdrop-blur-sm ${isGameRoute || isAdminRoute ? 'hidden' : ''}`}>
         <div>
           <h1 className="text-2xl font-black text-[#94C973] tracking-tight flex items-center gap-2">
             TinySprouts <Sprout fill="#94C973" />
@@ -99,8 +98,11 @@ function App() {
             <Route path="game/art" element={<ArtCanvas onBack={() => navigate('/')} />} />
             <Route path="game/voice" element={<VoiceLab onBack={() => navigate('/')} />} />
             <Route path="game/emotion" element={<EmotionMatch onBack={() => navigate('/')} />} />
+
+            {/* Admin Routes */}
+            <Route path="admin/report" element={<WeeklyReport onBack={() => navigate('/profile')} />} />
             
-            <Route path="fav" element={
+            <Route path="/fav" element={
                <div className="flex flex-col items-center justify-center h-64 text-slate-400">
                   <Heart size={48} className="mb-4 opacity-20" />
                   <p className="text-sm font-medium">收藏夹暂空</p>
@@ -110,7 +112,7 @@ function App() {
         </AnimatePresence>
       </main>
 
-      {!isGameRoute && (
+      {!isGameRoute && !isAdminRoute && (
         <nav className="fixed bottom-8 left-8 right-8 max-w-md mx-auto bg-white/90 backdrop-blur-xl rounded-[1.5rem] p-3 shadow-2xl border border-white/50 flex justify-around items-center z-40">
           <NavBtn to="/" icon={<PlusCircle size={26} />} />
           <NavBtn to="/lib" icon={<BookOpen size={26} />} />
