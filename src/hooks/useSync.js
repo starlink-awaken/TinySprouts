@@ -24,7 +24,10 @@ export function useSync() {
 
   // 2. 执行同步 (Push & Pull)
   const syncNow = async () => {
-    if (!userSession) return;
+    if (!userSession || !import.meta.env.VITE_SUPABASE_URL) {
+      if (!import.meta.env.VITE_SUPABASE_URL) alert('请先配置 Supabase 环境变量再同步');
+      return;
+    }
     setStatus('syncing');
 
     try {

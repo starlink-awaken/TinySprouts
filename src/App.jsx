@@ -33,26 +33,25 @@ function App() {
   }, [level]);
 
   const handleStartActivity = (activity) => {
-    if (activity.id === 4 || activity.title === '情绪连连看') {
-      navigate('/game/emotion');
-    } else if (activity.category === '数理逻辑') {
-      navigate('/game/forest');
-    } else if (activity.category === '创意艺术') {
-      navigate('/game/art');
-    } else if (activity.category === '社会情感' || activity.type === 'social') {
-      navigate('/game/voice');
-    } else if (activity.type === 'game') {
-      navigate('/game/wisdom');
-    } else {
-      const points = activity.exp || 15;
-      setLastAction(`完成 "${activity.title}" +${points}EXP`);
-      completeActivity(activity.id, points);
-      setShowToast(true);
-      setTimeout(() => setShowToast(false), 2000);
+    console.log("Navigating to activity:", activity.title, "ID:", activity.id);
+    
+    // 使用 ID 进行精确匹配跳转
+    switch(activity.id) {
+      case 1: navigate('/game/wisdom'); break;
+      case 2: navigate('/game/forest'); break;
+      case 3: navigate('/game/art'); break;
+      case 4: navigate('/game/emotion'); break;
+      case 5: navigate('/game/voice'); break;
+      default:
+        const points = activity.exp || 15;
+        setLastAction(`完成 "${activity.title}" +${points}EXP`);
+        completeActivity(activity.id, points);
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), 2000);
     }
   };
 
-  const isGameRoute = location.pathname.startsWith('/game');
+  const isGameRoute = location.pathname.includes('/game');
 
   return (
     <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto font-sans relative overflow-hidden bg-[#FDFCF0]">
@@ -61,9 +60,7 @@ function App() {
       <AnimatePresence>
         {showToast && (
           <motion.div 
-            initial={{ opacity: 0, y: -50 }}
-            animate={{ opacity: 1, y: 20 }}
-            exit={{ opacity: 0, y: -50 }}
+            initial={{ opacity: 0, y: -50 }} animate={{ opacity: 1, y: 20 }} exit={{ opacity: 0, y: -50 }}
             className="fixed top-0 left-0 right-0 z-[200] flex justify-center pointer-events-none"
           >
             <div className="bg-[#94C973] text-white px-5 py-2.5 rounded-full shadow-xl flex items-center gap-2 text-sm font-bold border-2 border-white backdrop-blur-md">
@@ -92,24 +89,18 @@ function App() {
       <main className="flex-1 overflow-y-auto">
         <AnimatePresence mode="wait">
           <Routes location={location} key={location.pathname}>
-            <Route path="/" element={
-              <PageWrapper><HomeView onStartActivity={handleStartActivity} /></PageWrapper>
-            } />
-            <Route path="/lib" element={
-              <PageWrapper><LibraryView onStartActivity={handleStartActivity} /></PageWrapper>
-            } />
-            <Route path="/profile" element={
-              <PageWrapper><ProfileView /></PageWrapper>
-            } />
+            <Route index element={<PageWrapper><HomeView onStartActivity={handleStartActivity} /></PageWrapper>} />
+            <Route path="lib" element={<PageWrapper><LibraryView onStartActivity={handleStartActivity} /></PageWrapper>} />
+            <Route path="profile" element={<PageWrapper><ProfileView /></PageWrapper>} />
             
             {/* Game Routes */}
-            <Route path="/game/wisdom" element={<WisdomIsland onBack={() => navigate('/')} />} />
-            <Route path="/game/forest" element={<NumberForest onBack={() => navigate('/')} />} />
-            <Route path="/game/art" element={<ArtCanvas onBack={() => navigate('/')} />} />
-            <Route path="/game/voice" element={<VoiceLab onBack={() => navigate('/')} />} />
-            <Route path="/game/emotion" element={<EmotionMatch onBack={() => navigate('/')} />} />
+            <Route path="game/wisdom" element={<WisdomIsland onBack={() => navigate('/')} />} />
+            <Route path="game/forest" element={<NumberForest onBack={() => navigate('/')} />} />
+            <Route path="game/art" element={<ArtCanvas onBack={() => navigate('/')} />} />
+            <Route path="game/voice" element={<VoiceLab onBack={() => navigate('/')} />} />
+            <Route path="game/emotion" element={<EmotionMatch onBack={() => navigate('/')} />} />
             
-            <Route path="/fav" element={
+            <Route path="fav" element={
                <div className="flex flex-col items-center justify-center h-64 text-slate-400">
                   <Heart size={48} className="mb-4 opacity-20" />
                   <p className="text-sm font-medium">收藏夹暂空</p>
